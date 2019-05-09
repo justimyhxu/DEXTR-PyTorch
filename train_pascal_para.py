@@ -1,5 +1,4 @@
 import glob
-import os
 import socket
 import timeit
 from collections import OrderedDict
@@ -151,10 +150,12 @@ if resume_epoch != nEpochs:
             # inputs, gts = inputs.to(device), gts.to(device)
             # inputs = torch.autograd.Variable(inputs.cuda(async=True))
             # gts = torch.autograd.Variable(gts.cuda(async =True))
-            try:
-                output = net.forward(inputs)
-            except:
-                np.save('error.npy',input.detach().cpu().numpy())
+            if inputs.shape[0] < p['trainBatch']:
+                continue
+
+            output = net.forward(inputs)
+
+            # np.save('error.npy',input.detach().cpu().numpy())
             output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
 
             # Compute the losses, side outputs and fuse
