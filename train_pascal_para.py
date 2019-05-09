@@ -163,7 +163,7 @@ if resume_epoch != nEpochs:
             running_loss_tr += loss.item()
 
             # Print stuff
-            if ii % num_img_tr == num_img_tr - 1:
+            if ii % num_img_tr == num_img_tr - 4:
                 running_loss_tr = running_loss_tr / num_img_tr
                 writer.add_scalar('data/total_loss_epoch', running_loss_tr, epoch)
                 print('[Epoch: %d, numImages: %5d]' % (epoch, ii*p['trainBatch']+inputs.data.shape[0]))
