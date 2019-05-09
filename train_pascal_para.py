@@ -37,7 +37,7 @@ resume_epoch = 0  # Default is 0, change if want to resume
 p = OrderedDict()  # Parameters to include in report
 classifier = 'psp'  # Head classifier to use
 p['trainBatch'] = 5 * (len(gpu_id) // 1 ) # Training batch size
-testBatch = 5  # Testing batch size
+testBatch = 5 *(len(gpu_id) // 1)  # Testing batch size
 useTest = 1  # See evolution of the test set when training?
 nTestInterval = 10  # Run on test set every nTestInterval epochs
 snapshot = 20  # Store a model every snapshot epochs
@@ -197,7 +197,7 @@ if resume_epoch != nEpochs:
 
                     # Forward pass of the mini-batch
                     inputs, gts = inputs.cuda(), gts.cuda()
-                    if inputs.shape[0] < p['trainBatch']:
+                    if inputs.shape[0] < testBatch:
                         continue
                     output = net.forward(inputs)
                     output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
