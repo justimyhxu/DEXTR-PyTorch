@@ -1,28 +1,28 @@
+import glob
+import os
 import socket
 import timeit
-from datetime import datetime
-import scipy.misc as sm
 from collections import OrderedDict
-import glob
+from datetime import datetime
 
+import scipy.misc as sm
 # PyTorch includes
 import torch.optim as optim
-from torchvision import transforms
-from torch.utils.data import DataLoader
-from torch.nn.functional import upsample
-
 # Tensorboard include
 from tensorboardX import SummaryWriter
+from torch.nn.functional import upsample
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
-# Custom includes
-from dataloaders.combine_dbs import CombineDBs as combine_dbs
 import dataloaders.pascal as pascal
 import dataloaders.sbd as sbd
-from dataloaders import custom_transforms as tr
 import networks.deeplab_resnet as resnet
-from layers.loss import class_balanced_cross_entropy_loss
+from dataloaders import custom_transforms as tr
+# Custom includes
+from dataloaders.combine_dbs import CombineDBs as combine_dbs
 from dataloaders.helpers import *
-import os
+from layers.loss import class_balanced_cross_entropy_loss
+
 # Set gpu_id to -1 to run in CPU mode, otherwise set the id of the corresponding gpu
 gpus = os.environ['CUDA_VISIBLE_DEVICES']
 gpu_id = list(gpus.strip().replace(',' ,''))
@@ -196,6 +196,8 @@ if resume_epoch != nEpochs:
 
                     # Forward pass of the mini-batch
                     inputs, gts = inputs.cuda(), gts.cuda()
+                    if inputs.shape[0] < p['trainBatch']:
+                        continue
                     output = net.forward(inputs)
                     output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
 
