@@ -151,7 +151,10 @@ if resume_epoch != nEpochs:
             # inputs, gts = inputs.to(device), gts.to(device)
             # inputs = torch.autograd.Variable(inputs.cuda(async=True))
             # gts = torch.autograd.Variable(gts.cuda(async =True))
-            output = net.forward(inputs)
+            try:
+                output = net.forward(inputs)
+            except:
+                np.save('error.npy',input.detach().cpu().numpy())
             output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
 
             # Compute the losses, side outputs and fuse
