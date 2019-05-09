@@ -1,5 +1,20 @@
 from pycocotools.coco import COCO
 
+import torch, cv2
+import errno
+import hashlib
+import os
+import sys
+import tarfile
+import numpy as np
+
+import torch.utils.data as data
+from PIL import Image
+from six.moves import urllib
+import json
+from mypath import Path
+
+
 class CocoSegmentation(data.Dataset):
     def __init__(self,
                  split,

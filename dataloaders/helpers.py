@@ -149,7 +149,18 @@ def extreme_points(mask, pert):
                      find_point(inds_x, inds_y, np.where(inds_y <= np.min(inds_y)+pert)), # top
                      find_point(inds_x, inds_y, np.where(inds_y >= np.max(inds_y)-pert)) # bottom
                      ])
-
+def get_mask_sample_masks(mask, num_pts):
+    index = np.nonzero(mask>0)
+    index = np.vstack(index).transpose(1,0)
+    index = index[:,::-1]
+    _len = index.shape[0]
+    if _len > num_pts:
+        np.random.shuffle(index)
+        index = index[:num_pts]
+    else:
+        sindex = [np.random.choice(_len)for i in range(num_pts)]
+        index = index[sindex]
+    return index
 
 def get_bbox(mask, points=None, pad=0, zero_pad=False):
     if points is not None:

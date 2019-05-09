@@ -145,11 +145,13 @@ class ExtremePoints(object):
     pert: number of pixels fo the maximum perturbation
     elem: which element of the sample to choose as the binary mask
     """
-    def __init__(self, sigma=10, pert=0, elem='gt'):
+    def __init__(self, sigma=10, pert=0, elem='gt', num_pts=50, type='mask'):
+        assert type in ['normal', 'mask', 'polygon']
         self.sigma = sigma
         self.pert = pert
         self.elem = elem
-
+        self.num_pts = num_pts
+        self.type=type
     def __call__(self, sample):
         if sample[self.elem].ndim == 3:
             raise ValueError('ExtremePoints not implemented for multiple object per image.')
@@ -157,9 +159,19 @@ class ExtremePoints(object):
         if np.max(_target) == 0:
             sample['extreme_points'] = np.zeros(_target.shape, dtype=_target.dtype) #  TODO: handle one_mask_per_point case
         else:
-            _points = helpers.extreme_points(_target, self.pert)
-            sample['extreme_points'] = helpers.make_gt(_target, _points, sigma=self.sigma, one_mask_per_point=False)
+            import matplotlib.pyplot as plt
 
+            if self.type == 'mask':
+                _points = helpers.get_mask_sample_masks(_target, 50)
+            elif self.type == 'normal':
+                _points = helpers.get_mask_sample_masks(_target, self.pert)
+
+            # plt.imshow(_target)
+            # plt.scatter(_points[:,0],_points[:,1])
+            # plt.show()
+            sample['extreme_points'] = helpers.make_gt(_target, _points, sigma=self.sigma, one_mask_per_point=False)
+            # plt.imshow(sample['extreme_points'])
+            # plt.show()
         return sample
 
     def __str__(self):

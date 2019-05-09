@@ -38,6 +38,8 @@ class VOCSegmentation(data.Dataset):
                  default=False):
 
         self.root = root
+        # import ipdb
+        # ipdb.set_trace()
         _voc_root = os.path.join(self.root, self.BASE_DIR)
         _mask_dir = os.path.join(_voc_root, 'SegmentationObject')
         _cat_dir = os.path.join(_voc_root, 'SegmentationClass')

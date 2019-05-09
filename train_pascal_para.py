@@ -22,10 +22,11 @@ from dataloaders import custom_transforms as tr
 import networks.deeplab_resnet as resnet
 from layers.loss import class_balanced_cross_entropy_loss
 from dataloaders.helpers import *
-
+import os
 # Set gpu_id to -1 to run in CPU mode, otherwise set the id of the corresponding gpu
-gpu_id = 0
-device = torch.device("cuda:"+str(gpu_id) if torch.cuda.is_available() else "cpu")
+gpus = os.environ['CUDA_VISIBLE_DEVICES']
+gpu_id = list(gpus.strip().replace(',' ,''))
+device = torch.device("cuda:"+str(gpu_id[0]) if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     print('Using GPU: {} '.format(gpu_id))
 
@@ -36,7 +37,7 @@ resume_epoch = 0  # Default is 0, change if want to resume
 
 p = OrderedDict()  # Parameters to include in report
 classifier = 'psp'  # Head classifier to use
-p['trainBatch'] = 5  # Training batch size
+p['trainBatch'] = 5 * (len(gpu_id) // 1 ) # Training batch size
 testBatch = 5  # Testing batch size
 useTest = 1  # See evolution of the test set when training?
 nTestInterval = 10  # Run on test set every nTestInterval epochs
@@ -45,12 +46,13 @@ relax_crop = 50  # Enlarge the bounding box by relax_crop pixels
 nInputChannels = 4  # Number of input channels (RGB + heatmap of extreme points)
 zero_pad_crop = True  # Insert zero padding when cropping the image
 p['nAveGrad'] = 1  # Average the gradient of several iterations
-p['lr'] = 1e-8  # Learning rate
+p['lr'] = 1e-8 * (len(gpu_id) // 1) # Learning rate
 p['wd'] = 0.0005  # Weight decay
 p['momentum'] = 0.9  # Momentum
 
 # Results and model directories (a new directory is generated for every run)
 save_dir_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+
 exp_name = os.path.dirname(os.path.abspath(__file__)).split('/')[-1]
 if resume_epoch == 0:
     runs = sorted(glob.glob(os.path.join(save_dir_root, 'run_*')))
@@ -58,6 +60,7 @@ if resume_epoch == 0:
 else:
     run_id = 0
 save_dir = os.path.join(save_dir_root, 'run_' + str(run_id))
+print('->>>>>>>>>>>>>save dir', save_dir)
 if not os.path.exists(os.path.join(save_dir, 'models')):
     os.makedirs(os.path.join(save_dir, 'models'))
 
@@ -75,7 +78,9 @@ else:
 train_params = [{'params': resnet.get_1x_lr_params(net), 'lr': p['lr']},
                 {'params': resnet.get_10x_lr_params(net), 'lr': p['lr'] * 10}]
 
-net.to(device)
+# net.to(device)
+net = torch.nn.DataParallel(net.cuda())
+# net.to(device)
 
 # Training the network
 if resume_epoch != nEpochs:
@@ -93,14 +98,14 @@ if resume_epoch != nEpochs:
         tr.ScaleNRotate(rots=(-20, 20), scales=(.75, 1.25)),
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt'),
+        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='mask'),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
     composed_transforms_ts = transforms.Compose([
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=0, elem='crop_gt'),
+        tr.ExtremePoints(sigma=10, pert=0, elem='crop_gt', num_pts=50, type='mask'),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
@@ -119,8 +124,8 @@ if resume_epoch != nEpochs:
     p['dataset_test'] = str(db_train)
     p['transformations_test'] = [str(tran) for tran in composed_transforms_ts.transforms]
 
-    trainloader = DataLoader(db_train, batch_size=p['trainBatch'], shuffle=True, num_workers=2)
-    testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=2)
+    trainloader = DataLoader(db_train, batch_size=p['trainBatch'], shuffle=True, num_workers=8)
+    testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=8)
 
     generate_param_report(os.path.join(save_dir, exp_name + '.txt'), p)
 
@@ -142,8 +147,10 @@ if resume_epoch != nEpochs:
 
             # Forward-Backward of the mini-batch
             inputs.requires_grad_()
-            inputs, gts = inputs.to(device), gts.to(device)
-
+            inputs , gts = inputs.cuda(), gts.cuda()
+            # inputs, gts = inputs.to(device), gts.to(device)
+            # inputs = torch.autograd.Variable(inputs.cuda(async=True))
+            # gts = torch.autograd.Variable(gts.cuda(async =True))
             output = net.forward(inputs)
             output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
 
@@ -185,8 +192,7 @@ if resume_epoch != nEpochs:
                     inputs, gts = sample_batched['concat'], sample_batched['crop_gt']
 
                     # Forward pass of the mini-batch
-                    inputs, gts = inputs.to(device), gts.to(device)
-
+                    inputs, gts = inputs.cuda(), gts.cuda()
                     output = net.forward(inputs)
                     output = upsample(output, size=(512, 512), mode='bilinear', align_corners=True)
 
@@ -228,7 +234,7 @@ with torch.no_grad():
         inputs, gts, metas = sample_batched['concat'], sample_batched['gt'], sample_batched['meta']
 
         # Forward of the mini-batch
-        inputs = inputs.to(device)
+        inputs = inputs.cuda()
 
         outputs = net.forward(inputs)
         outputs = upsample(outputs, size=(512, 512), mode='bilinear', align_corners=True)
