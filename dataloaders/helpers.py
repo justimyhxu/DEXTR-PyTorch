@@ -287,12 +287,12 @@ def get_mask_noise_sample_masks(mask, num_pts, ratio=0):
         nindex = nindex[sindex]
     elif _len_in < pts_in and _len_out > pts_out:
         sindex = [np.random.choice(_len_in) for i in range(pts_in)]
-        index = nindex[sindex]
+        index = index[sindex]
         np.random.shuffle(nindex)
         nindex = nindex[:pts_out]
     else:
         sindex = [np.random.choice(_len_in) for i in range(pts_in)]
-        index = nindex[sindex]
+        index = index[sindex]
         sindex = [np.random.choice(_len_out) for i in range(pts_out)]
         nindex = nindex[sindex]
 
