@@ -265,7 +265,7 @@ def get_mask_noise_sample_masks(mask, num_pts, ratio=0):
     nindex = np.nonzero(mask == 0)
     nindex = np.vstack(nindex).transpose(1, 0)
     nindex = nindex[:, ::-1]
-    index_mask  = tuple(np.logical_and(np.logical_and(nindex[:,0]<=x2,nindex[:,0]>=x1), np.logical_and(nindex[:,1]<=y2, nindex[:, 1]>=y1)))
+    index_mask  = np.logical_and(np.logical_and(nindex[:,0]<=x2,nindex[:,0]>=x1), np.logical_and(nindex[:,1]<=y2, nindex[:, 1]>=y1))
     nindex = nindex[index_mask]
 
 
