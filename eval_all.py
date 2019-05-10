@@ -1,13 +1,14 @@
 import os.path
 
 from torch.utils.data import DataLoader
-from evaluation.eval import eval_one_result
+
 import dataloaders.pascal as pascal
+from evaluation.eval import eval_one_result
 
 exp_root_dir = './'
 
 method_names = []
-method_names.append('run_0')
+method_names.append('run_7')
 
 if __name__ == '__main__':
 
