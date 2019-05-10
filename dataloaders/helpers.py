@@ -241,7 +241,7 @@ def get_polygon_points(polygons, num_pts, img_shape):
     polygon_scale = polygon_scale.reshape(-1,2)
     return polygon_scale
 
-def get_mask_sample_masks(mask, num_pts):
+def get_mask_sample_points(mask, num_pts):
     index = np.nonzero(mask>0)
     index = np.vstack(index).transpose(1,0)
     index = index[:,::-1]
@@ -253,6 +253,49 @@ def get_mask_sample_masks(mask, num_pts):
         sindex = [np.random.choice(_len)for i in range(num_pts)]
         index = index[sindex]
     return index
+
+def get_mask_noise_sample_masks(mask, num_pts, ratio=0):
+    index = np.nonzero(mask>0)
+    y1,y2, x1, x2 = min(index[0]), max(index[0]), min(index[1]), max(index[1])
+
+    index = np.vstack(index).transpose(1,0)
+    index = index[:,::-1]
+
+
+    nindex = np.nonzero(mask == 0)
+    nindex = np.vstack(nindex).transpose(1, 0)
+    nindex = nindex[:, ::-1]
+    index_mask  = [np.logical_and(np.logical_and(nindex[:,0]<=x2,nindex[:,0]>=x1), np.logical_and(nindex[:,1]<=y2, nindex[:, 1]>=y1))]
+    nindex = nindex[index_mask]
+
+
+    _len_in = index.shape[0]
+    _len_out = nindex.shape[0]
+    pts_in = int(num_pts*(1-ratio))
+    pts_out = num_pts-pts_in
+    if _len_in > pts_in and _len_out > pts_out :
+        np.random.shuffle(index)
+        index = index[:pts_in]
+        np.random.shuffle(nindex)
+        nindex = nindex[:pts_out]
+    elif _len_in > pts_in and _len_out < pts_out:
+        np.random.shuffle(index)
+        index = index[:pts_in]
+        sindex = [np.random.choice(_len_out)for i in range(pts_out)]
+        nindex = nindex[sindex]
+    elif _len_in < pts_in and _len_out > pts_out:
+        sindex = [np.random.choice(_len_in) for i in range(pts_in)]
+        index = nindex[sindex]
+        np.random.shuffle(nindex)
+        nindex = nindex[:pts_out]
+    else:
+        sindex = [np.random.choice(_len_in) for i in range(pts_in)]
+        index = nindex[sindex]
+        sindex = [np.random.choice(_len_out) for i in range(pts_out)]
+        nindex = nindex[sindex]
+
+    return np.concatenate((index, nindex), axis=0)
+
 
 def get_bbox_sample_points(mask, num_pts):
     index = np.nonzero(mask>0)

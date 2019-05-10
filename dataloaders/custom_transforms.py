@@ -146,7 +146,7 @@ class ExtremePoints(object):
     elem: which element of the sample to choose as the binary mask
     """
     def __init__(self, sigma=10, pert=0, elem='gt', num_pts=50, type='mask', vis=False):
-        assert type in ['normal', 'mask', 'polygon', 'bbox']
+        assert type in ['normal', 'mask', 'polygon', 'bbox', 'mask_noise']
         self.sigma = sigma
         self.pert = pert
         self.elem = elem
@@ -173,12 +173,14 @@ class ExtremePoints(object):
                 _points = helpers.get_polygon_points(_polygons, self.num_pts, _target.shape)
                 _pert_points = [point+(np.random.randint(-self.pert,self.pert), np.random.randint(-self.pert, self.pert))  for point in _points]
                 _pert_points = np.array(_pert_points)
+            elif self.type=='mask_noise':
+                _points = helpers.get_mask_noise_sample_masks(_target, self.num_pts, ratio=0.2)
             if self.vis:
                 plt.imshow(_target)
                 plt.scatter(_points[:,0],_points[:,1])
                 plt.show()
-                plt.imshow(_target)
-                plt.scatter(_pert_points[:, 0], _pert_points[:, 1], c='r')
+                # plt.imshow(_target)
+                # plt.scatter(_pert_points[:, 0], _pert_points[:, 1], c='r')
 
             sample['extreme_points'] = helpers.make_gt(_target, _points, sigma=self.sigma, one_mask_per_point=False)
 

@@ -22,10 +22,21 @@ from dataloaders.combine_dbs import CombineDBs as combine_dbs
 from dataloaders.helpers import *
 from layers.loss import class_balanced_cross_entropy_loss
 
+import argparse
+parser = argparse.ArgumentParser(description='PyTorch DEXTNET TESTING')
+
+parser.add_argument('--points_type', type=str)
+parser.add_argument('--num_pts', type=int, default=50)
+
+args = parser.parse_args()
+
+
+
 # Set gpu_id to -1 to run in CPU mode, otherwise set the id of the corresponding gpu
 gpus = os.environ['CUDA_VISIBLE_DEVICES']
 gpu_id = list(gpus.strip().replace(',' ,''))
 device = torch.device("cuda:"+str(gpu_id[0]) if torch.cuda.is_available() else "cpu")
+
 if torch.cuda.is_available():
     print('Using GPU: {} '.format(gpu_id))
 
@@ -97,14 +108,14 @@ if resume_epoch != nEpochs:
         tr.ScaleNRotate(rots=(-20, 20), scales=(.75, 1.25)),
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=50, type='polygon', vis=False),
+        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
     composed_transforms_ts = transforms.Compose([
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='polygon', vis=False),
+        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
@@ -226,7 +237,7 @@ net.eval()
 composed_transforms_ts = transforms.Compose([
     tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
     tr.FixedResize(resolutions={'gt': None, 'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-    tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='mask'),
+    tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=args.num_pts, type=args.point_type),
     tr.ToImage(norm_elem='extreme_points'),
     tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
     tr.ToTensor()])
