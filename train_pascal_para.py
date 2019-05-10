@@ -25,7 +25,7 @@ from layers.loss import class_balanced_cross_entropy_loss
 import argparse
 parser = argparse.ArgumentParser(description='PyTorch DEXTNET TESTING')
 
-parser.add_argument('--points_type', type=str)
+parser.add_argument('--point_type', type=str)
 parser.add_argument('--num_pts', type=int, default=50)
 
 args = parser.parse_args()
