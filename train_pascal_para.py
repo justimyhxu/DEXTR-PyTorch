@@ -30,7 +30,7 @@ parser.add_argument('--num_pts', type=int, default=50)
 
 args = parser.parse_args()
 
-
+assert args.point_type in ['mask', 'mask_noise', 'polygon', 'normal', 'bbox']
 
 # Set gpu_id to -1 to run in CPU mode, otherwise set the id of the corresponding gpu
 gpus = os.environ['CUDA_VISIBLE_DEVICES']
