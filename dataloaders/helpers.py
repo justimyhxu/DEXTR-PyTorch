@@ -266,12 +266,15 @@ def get_mask_noise_sample_masks(mask, num_pts, ratio=0):
     nindex = np.vstack(nindex).transpose(1, 0)
     nindex = nindex[:, ::-1]
     index_mask  = [np.logical_and(np.logical_and(nindex[:,0]<=x2,nindex[:,0]>=x1), np.logical_and(nindex[:,1]<=y2, nindex[:, 1]>=y1))]
+    index_mask = np.array(index_mask)
     nindex = nindex[index_mask]
 
 
     _len_in = index.shape[0]
     _len_out = nindex.shape[0]
     pts_in = int(num_pts*(1-ratio))
+    if pts_in == 0:
+        pts_in += 1
     pts_out = num_pts-pts_in
     if _len_in > pts_in and _len_out > pts_out :
         np.random.shuffle(index)
