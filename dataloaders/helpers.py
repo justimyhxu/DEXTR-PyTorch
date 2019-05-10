@@ -276,7 +276,7 @@ def get_mask_noise_sample_masks(mask, num_pts, ratio=0):
         pts_in += 1
     pts_out = num_pts-pts_in
     if _len_out == 0:
-        _points = get_mask_noise_sample_masks(mask, num_pts)
+        _points = get_mask_sample_points(mask, num_pts)
         return _points
     if _len_in > pts_in and _len_out > pts_out :
         np.random.shuffle(index)
