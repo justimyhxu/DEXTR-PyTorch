@@ -49,7 +49,7 @@ p['lr'] = 1e-8  # Learning rate
 p['wd'] = 0.0005  # Weight decay
 p['momentum'] = 0.9  # Momentum
 
-# Results and model directories (a new directory is generated for every run)
+# Results_4pts_pert5 and model directories (a new directory is generated for every run)
 save_dir_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 exp_name = os.path.dirname(os.path.abspath(__file__)).split('/')[-1]
 if resume_epoch == 0:
@@ -216,7 +216,7 @@ composed_transforms_ts = transforms.Compose([
 db_test = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts, retname=True)
 testloader = DataLoader(db_test, batch_size=1, shuffle=False, num_workers=1)
 
-save_dir_res = os.path.join(save_dir, 'Results')
+save_dir_res = os.path.join(save_dir, 'Results_4pts_pert5')
 if not os.path.exists(save_dir_res):
     os.makedirs(save_dir_res)
 

@@ -40,7 +40,7 @@ p['trainBatch'] = 5 * (len(gpu_id) // 1 ) # Training batch size
 testBatch = 5 *(len(gpu_id) // 1)  # Testing batch size
 useTest = 1  # See evolution of the test set when training?
 nTestInterval = 10  # Run on test set every nTestInterval epochs
-snapshot = 20  # Store a model every snapshot epochs
+snapshot = 5  # Store a model every snapshot epochs
 relax_crop = 50  # Enlarge the bounding box by relax_crop pixels
 nInputChannels = 4  # Number of input channels (RGB + heatmap of extreme points)
 zero_pad_crop = True  # Insert zero padding when cropping the image
@@ -49,7 +49,7 @@ p['lr'] = 1e-8 * (len(gpu_id) // 1) # Learning rate
 p['wd'] = 0.0005  # Weight decay
 p['momentum'] = 0.9  # Momentum
 
-# Results and model directories (a new directory is generated for every run)
+# Results_4pts_pert5 and model directories (a new directory is generated for every run)
 save_dir_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
 exp_name = os.path.dirname(os.path.abspath(__file__)).split('/')[-1]
@@ -97,14 +97,14 @@ if resume_epoch != nEpochs:
         tr.ScaleNRotate(rots=(-20, 20), scales=(.75, 1.25)),
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='mask'),
+        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=50, type='polygon', vis=False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
     composed_transforms_ts = transforms.Compose([
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=0, elem='crop_gt', num_pts=50, type='mask'),
+        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='polygon', vis=False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
@@ -140,6 +140,8 @@ if resume_epoch != nEpochs:
         start_time = timeit.default_timer()
 
         net.train()
+        import time
+        begin = time.time()
         for ii, sample_batched in enumerate(trainloader):
 
             inputs, gts = sample_batched['concat'], sample_batched['crop_gt']
@@ -163,8 +165,9 @@ if resume_epoch != nEpochs:
             running_loss_tr += loss.item()
 
             # Print stuff
-            if ii % 50 == 0:
-                print('This epoch{} Batch {} OneBatch{}'.format(epoch, ii, len(trainloader)))
+            if ii % 20 == 0:
+                print('This epoch {},ALL Batch {}, Batch {}, cost time {}'.format(epoch, len(trainloader), ii, time.time()-begin))
+                begin = time.time()
             if ii % num_img_tr == num_img_tr - 4:
                 running_loss_tr = running_loss_tr / num_img_tr
                 writer.add_scalar('data/total_loss_epoch', running_loss_tr, epoch)
@@ -223,14 +226,14 @@ net.eval()
 composed_transforms_ts = transforms.Compose([
     tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
     tr.FixedResize(resolutions={'gt': None, 'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-    tr.ExtremePoints(sigma=10, pert=0, elem='crop_gt'),
+    tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='mask'),
     tr.ToImage(norm_elem='extreme_points'),
     tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
     tr.ToTensor()])
 db_test = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts, retname=True)
 testloader = DataLoader(db_test, batch_size=1, shuffle=False, num_workers=1)
 
-save_dir_res = os.path.join(save_dir, 'Results')
+save_dir_res = os.path.join(save_dir, 'Results_4pts_pert5')
 if not os.path.exists(save_dir_res):
     os.makedirs(save_dir_res)
 

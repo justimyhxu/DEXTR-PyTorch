@@ -149,6 +149,98 @@ def extreme_points(mask, pert):
                      find_point(inds_x, inds_y, np.where(inds_y <= np.min(inds_y)+pert)), # top
                      find_point(inds_x, inds_y, np.where(inds_y >= np.max(inds_y)-pert)) # bottom
                      ])
+def mask_to_poly(mask, visualize=False):
+    # import ipdb
+    # ipdb.set_trace()
+    mask = mask.astype(np.uint8)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    polygons = []
+    for contour in contours:
+        contour = contour.flatten().tolist()
+        if len(contour) > 4:
+            polygons.append(contour)
+    import matplotlib.pyplot as plt
+    if visualize:
+        plt.imshow(mask)
+        for polygon in polygons:
+            # self.plot_polygon(polygon)
+            print(polygon)
+            y = polygon[1::2]
+            y.append(y[0])
+            x = polygon[0::2]
+            x.append(x[0])
+            plt.plot(x, y)
+        plt.show()
+        # plt.savefig('vis.png')
+        # # plt.clf()
+        # import pdb
+        # pdb.set_trace()
+    return polygons
+
+def sample_on_polygon(polygon, n_points=50):
+    y = polygon[0::2]
+    x = polygon[1::2]
+    x_t, y_t = x[1:], y[1:]
+    x_t.append(x[0])
+    y_t.append(y[0])
+    x_t, y_t = np.asarray(x_t), np.asarray(y_t)
+    dist = np.sqrt((x_t - x) * (x_t - x) + (y_t - y) * (y_t - y))
+    dist_sum = np.cumsum(dist)
+    stride = dist_sum[-1] / n_points
+
+    x_set, y_set = [], []
+    for i in range(n_points):
+        length = i * stride
+        idx = np.where(length <= dist_sum)[0][0]
+        length_remained = dist_sum[idx] - length
+        eps = 1e-12
+        alpha = 1 - length_remained / (dist[idx] + eps)
+        if idx < np.shape(dist)[0] - 1:
+            x_i = (1 - alpha) * x[idx] + alpha * x[idx + 1]
+            y_i = (1 - alpha) * y[idx] + alpha * y[idx + 1]
+        else:
+            x_i = (1 - alpha) * x[idx] + alpha * x[0]
+            y_i = (1 - alpha) * y[idx] + alpha * y[0]
+        x_set.append(x_i)
+        y_set.append(y_i)
+    x_set, y_set = np.array(x_set), np.array(y_set)
+    point_set = np.concatenate((y_set[:,None], x_set[:,None]), 1)
+    point_set = point_set.reshape(-1)
+    return point_set
+
+def polygon_len(polygon):
+    y = polygon[0::2]
+    x = polygon[1::2]
+    x_t, y_t = x[1:], y[1:]
+    x_t.append(x[0])
+    y_t.append(y[0])
+    x_t, y_t = np.asarray(x_t), np.asarray(y_t)
+    dist = np.sqrt((x_t - x) * (x_t - x) + (y_t - y) * (y_t - y))
+    perimeter = sum(dist)
+    return perimeter
+
+def get_polygon_points(polygons, num_pts, img_shape):
+
+    if len(polygons) == 0:
+        polygon_sample = np.zeros([2*num_pts], np.float64)
+    else:
+        polygons_len = np.array([polygon_len(polygon) for polygon in polygons])
+        polygons_ratio = polygons_len/polygons_len.sum()
+        polynums_num = (polygons_ratio*num_pts).astype(np.int)
+        polynums_num[-1] = num_pts-polynums_num[:-1].sum()
+        fuse_polygon = []
+        for poly_numlen, polygon in zip(polynums_num, polygons):
+            if poly_numlen == 0:
+                continue
+            fuse_polygon.append(sample_on_polygon(polygon, poly_numlen))
+        polygon_sample = np.concatenate(fuse_polygon)
+    polygon_scale = polygon_sample * 1
+    polygon_scale[0::2] = np.clip(polygon_scale[0::2], 0, img_shape[1] - 1)
+    polygon_scale[1::2] = np.clip(polygon_scale[1::2], 0, img_shape[0] - 1)
+
+    polygon_scale = polygon_scale.reshape(-1,2)
+    return polygon_scale
+
 def get_mask_sample_masks(mask, num_pts):
     index = np.nonzero(mask>0)
     index = np.vstack(index).transpose(1,0)
@@ -161,6 +253,14 @@ def get_mask_sample_masks(mask, num_pts):
         sindex = [np.random.choice(_len)for i in range(num_pts)]
         index = index[sindex]
     return index
+
+def get_bbox_sample_points(mask, num_pts):
+    index = np.nonzero(mask>0)
+    x1,x2, y1, y2 = min(index[0]), max(index[0]), min(index[1]), max(index[1])
+    points = []
+    for i in range(num_pts):
+        points.append((np.random.randint(y1,y2),np.random.randint(x1,x2)))
+    return np.array(points)
 
 def get_bbox(mask, points=None, pad=0, zero_pad=False):
     if points is not None:

@@ -145,13 +145,14 @@ class ExtremePoints(object):
     pert: number of pixels fo the maximum perturbation
     elem: which element of the sample to choose as the binary mask
     """
-    def __init__(self, sigma=10, pert=0, elem='gt', num_pts=50, type='mask'):
-        assert type in ['normal', 'mask', 'polygon']
+    def __init__(self, sigma=10, pert=0, elem='gt', num_pts=50, type='mask', vis=False):
+        assert type in ['normal', 'mask', 'polygon', 'bbox']
         self.sigma = sigma
         self.pert = pert
         self.elem = elem
         self.num_pts = num_pts
         self.type=type
+        self.vis = vis
     def __call__(self, sample):
         if sample[self.elem].ndim == 3:
             raise ValueError('ExtremePoints not implemented for multiple object per image.')
@@ -164,15 +165,28 @@ class ExtremePoints(object):
             if self.type == 'mask':
                 _points = helpers.get_mask_sample_masks(_target, 50)
             elif self.type == 'normal':
-                _points = helpers.get_mask_sample_masks(_target, self.pert)
+                _points = helpers.extreme_points(_target, self.pert)
+            elif self.type == 'bbox':
+                _points = helpers.get_bbox_sample_points(_target, self.num_pts)
+            elif self.type == 'polygon':
+                _polygons = helpers.mask_to_poly(_target, visualize=False)
+                _points = helpers.get_polygon_points(_polygons, self.num_pts, _target.shape)
+                _pert_points = [point+(np.random.randint(-self.pert,self.pert), np.random.randint(-self.pert, self.pert))  for point in _points]
+                _pert_points = np.array(_pert_points)
+            if self.vis:
+                plt.imshow(_target)
+                plt.scatter(_points[:,0],_points[:,1])
+                plt.show()
+                plt.imshow(_target)
+                plt.scatter(_pert_points[:, 0], _pert_points[:, 1], c='r')
 
-            # plt.imshow(_target)
-            # plt.scatter(_points[:,0],_points[:,1])
-            # plt.show()
             sample['extreme_points'] = helpers.make_gt(_target, _points, sigma=self.sigma, one_mask_per_point=False)
-            # plt.imshow(sample['extreme_points'])
-            # plt.show()
+
+            if self.vis:
+                plt.imshow(sample['extreme_points'])
+                plt.show()
         return sample
+
 
     def __str__(self):
         return 'ExtremePoints:(sigma='+str(self.sigma)+', pert='+str(self.pert)+', elem='+str(self.elem)+')'

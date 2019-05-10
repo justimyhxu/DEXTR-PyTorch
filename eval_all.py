@@ -8,7 +8,7 @@ from evaluation.eval import eval_one_result
 exp_root_dir = './'
 
 method_names = []
-method_names.append('run_7')
+method_names.append('maks_pts_50')
 
 if __name__ == '__main__':
 
@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     # Iterate through all the different methods
     for method in method_names:
-        results_folder = os.path.join(exp_root_dir, method, 'Results')
+        results_folder = os.path.join(exp_root_dir, method, 'Results_4pts_pert5')
 
         filename = os.path.join(exp_root_dir, 'eval_results', method.replace('/', '-') + '.txt')
         if not os.path.exists(os.path.join(exp_root_dir, 'eval_results')):
