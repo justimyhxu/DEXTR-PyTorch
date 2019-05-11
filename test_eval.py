@@ -57,7 +57,7 @@ zero_pad_crop = True  # Insert zero padding when cropping the image
 composed_transforms_ts = transforms.Compose([
     tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
     tr.FixedResize(resolutions={'gt': None, 'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-    tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=50, type='polygon', vis=False),
+    tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=50, type='polygon', vis=False),
     tr.ToImage(norm_elem='extreme_points'),
     tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
     tr.ToTensor()])
