@@ -4,7 +4,8 @@ class Path(object):
     def db_root_dir(database):
         if database == 'pascal':
             return './data/PASCAL/VOC2012'  # folder that contains VOCdevkit/.
-
+        if database == 'coco':
+            return './data/coco'  # folder that contains VOCdevkit/.
         elif database == 'sbd':
             return './data/SBD/'  # folder with img/, inst/, cls/, etc.
         else:

@@ -161,9 +161,10 @@ class ExtremePoints(object):
             sample['extreme_points'] = np.zeros(_target.shape, dtype=_target.dtype) #  TODO: handle one_mask_per_point case
         else:
             import matplotlib.pyplot as plt
-
+            # import ipdb
+            # ipdb.set_trace()
             if self.type == 'mask':
-                _points = helpers.get_mask_sample_masks(_target, 50)
+                _points = helpers.get_mask_sample_points(_target, 50)
             elif self.type == 'normal':
                 _points = helpers.extreme_points(_target, self.pert)
             elif self.type == 'bbox':
@@ -176,6 +177,7 @@ class ExtremePoints(object):
             elif self.type=='mask_noise':
                 _points = helpers.get_mask_noise_sample_masks(_target, self.num_pts, ratio=0.2)
             if self.vis:
+                # if sample['meta']['category'] == 2:
                 plt.imshow(_target)
                 plt.scatter(_points[:,0],_points[:,1])
                 plt.show()
@@ -185,6 +187,7 @@ class ExtremePoints(object):
             sample['extreme_points'] = helpers.make_gt(_target, _points, sigma=self.sigma, one_mask_per_point=False)
 
             if self.vis:
+                # if sample['meta']['category'] == 2:
                 plt.imshow(sample['extreme_points'])
                 plt.show()
         return sample
