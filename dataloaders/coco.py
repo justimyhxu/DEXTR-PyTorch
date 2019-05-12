@@ -23,7 +23,7 @@ class CocoSegmentation(data.Dataset):
                  without_pascal_categories=False,
                  one_mask_per_anno=False,
                  one_mask_per_class=False,
-                 images_with_all_cstm_cats=None,
+                 images_with_all_cstm_cats=True,
                  db_root=Path.db_root_dir('coco'),
                  max_num_samples=None,
                  transform=None,
@@ -133,8 +133,8 @@ class CocoSegmentation(data.Dataset):
                         target = np.logical_or(target, np.array(coco.annToMask(ann).reshape([img.shape[0], img.shape[1], 1])))
                 target = target.astype(np.float32)
             except:
-                img = np.zeros((100, 100, 3))
-                target = np.zeros((100, 100))
+                img = np.zeros((100, 100, 3)).astype(np.float32)
+                target = np.zeros((100, 100)).astype(np.float32)
                 print('Error reading image '+str(path)+' with object id '+str(self.ids[index]))
 
             sample['image'] = img

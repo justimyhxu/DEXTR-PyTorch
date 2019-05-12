@@ -75,7 +75,8 @@ print("Initializing weights from: {}".format(
 net.load_state_dict(
         torch.load(os.path.join(args.model_path, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth'),
                    map_location=lambda storage, loc: storage))
-
+import ipdb
+ipdb.set_trace()
 save_dir_res = os.path.join(args.save_dir_res, args.res_dir)
 
 if not os.path.exists(save_dir_res):
