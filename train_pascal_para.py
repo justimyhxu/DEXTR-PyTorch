@@ -115,7 +115,7 @@ if resume_epoch != nEpochs:
     composed_transforms_ts = transforms.Compose([
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=False),
+        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
@@ -237,14 +237,14 @@ net.eval()
 composed_transforms_ts = transforms.Compose([
     tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
     tr.FixedResize(resolutions={'gt': None, 'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-    tr.ExtremePoints(sigma=10, pert=5, elem='crop_gt', num_pts=args.num_pts, type=args.point_type),
+    tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=args.num_pts, type=args.point_type),
     tr.ToImage(norm_elem='extreme_points'),
     tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
     tr.ToTensor()])
 db_test = pascal.VOCSegmentation(split='val', transform=composed_transforms_ts, retname=True)
 testloader = DataLoader(db_test, batch_size=1, shuffle=False, num_workers=1)
 
-save_dir_res = os.path.join(save_dir, 'Results_4pts_pert5')
+save_dir_res = os.path.join(save_dir, 'Results_pert30')
 if not os.path.exists(save_dir_res):
     os.makedirs(save_dir_res)
 

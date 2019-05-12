@@ -103,3 +103,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+.run_*/
+.md_*/

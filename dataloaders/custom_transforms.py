@@ -170,9 +170,9 @@ class ExtremePoints(object):
                 _points = helpers.get_bbox_sample_points(_target, self.num_pts)
             elif self.type == 'polygon':
                 _polygons = helpers.mask_to_poly(_target, visualize=False)
-                _points = helpers.get_polygon_points(_polygons, self.num_pts, _target.shape)
-                _pert_points = [point+(np.random.randint(-self.pert,self.pert), np.random.randint(-self.pert, self.pert))  for point in _points]
-                _pert_points = np.array(_pert_points)
+                _non_pert_points = helpers.get_polygon_points(_polygons, self.num_pts, _target.shape)
+                _pert_points = [point+(np.random.randint(-self.pert,self.pert), np.random.randint(-self.pert, self.pert))  for point in _non_pert_points]
+                _points = np.array(_pert_points)
             elif self.type=='mask_noise':
                 _points = helpers.get_mask_noise_sample_masks(_target, self.num_pts, ratio=0.2)
             if self.vis:
