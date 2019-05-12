@@ -426,7 +426,7 @@ def crop_from_mask(img, mask, relax=0, zero_pad=False):
     crop = crop_from_bbox(img, bbox, zero_pad)
 
     bbox_org = get_bbox(mask,pad=relax,zero_pad=zero_pad)
-    crop_org = crop_from_mask(img,bbox,zero_pad)
+    crop_org = crop_from_bbox(img, bbox, zero_pad)
 
     import matplotlib.pyplot as plt
     plt.imshow(crop)
