@@ -310,7 +310,7 @@ def get_bbox_sample_points(mask, num_pts):
         points.append((np.random.randint(y1,y2),np.random.randint(x1,x2)))
     return np.array(points)
 
-def get_bbox(mask, points=None, pad=0, zero_pad=False):
+def get_bbox(mask, points=None, pad=0, zero_pad=False, resize=False, ratio=1.25):
     if points is not None:
         inds = np.flip(points.transpose(), axis=0)
     else:
@@ -329,11 +329,24 @@ def get_bbox(mask, points=None, pad=0, zero_pad=False):
         y_min_bound = 0
         x_max_bound = mask.shape[1] - 1
         y_max_bound = mask.shape[0] - 1
-
-    x_min = max(inds[1].min() - pad, x_min_bound)
-    y_min = max(inds[0].min() - pad, y_min_bound)
-    x_max = min(inds[1].max() + pad, x_max_bound)
-    y_max = min(inds[0].max() + pad, y_max_bound)
+    if not resize:
+        x_min = max(inds[1].min() - pad, x_min_bound)
+        y_min = max(inds[0].min() - pad, y_min_bound)
+        x_max = min(inds[1].max() + pad, x_max_bound)
+        y_max = min(inds[0].max() + pad, y_max_bound)
+    else:
+        x_min_org = inds[1].min()
+        y_min_org = inds[0].min()
+        x_max_org = inds[1].max()
+        y_max_org = inds[0].max()
+        x_center = int((x_min_org+x_max_org)/2)
+        y_center = int((y_min_org+y_max_org)/2)
+        w = int((-x_min_org + x_max_org) / 2)
+        h = int((-y_min_org + y_max_org) / 2)
+        x_min = max(int(x_center-ratio*w),x_min_bound)
+        x_max = min(int(x_center+ratio*w),x_max_bound)
+        y_min = max(int(y_center-ratio*h),y_min_bound)
+        y_max = min(int(y_center+ratio*h),y_max_bound)
 
     return x_min, y_min, x_max, y_max
 
@@ -403,14 +416,23 @@ def crop_from_mask(img, mask, relax=0, zero_pad=False):
         mask = cv2.resize(mask, dsize=tuple(reversed(img.shape[:2])), interpolation=cv2.INTER_NEAREST)
 
     assert(mask.shape[:2] == img.shape[:2])
-
-    bbox = get_bbox(mask, pad=relax, zero_pad=zero_pad)
+    # import ipdb
+    # ipdb.set_trace()
+    bbox = get_bbox(mask, pad=relax, zero_pad=zero_pad, resize=True)
 
     if bbox is None:
         return None
 
     crop = crop_from_bbox(img, bbox, zero_pad)
 
+    bbox_org = get_bbox(mask,pad=relax,zero_pad=zero_pad)
+    crop_org = crop_from_mask(img,bbox,zero_pad)
+
+    import matplotlib.pyplot as plt
+    plt.imshow(crop)
+    plt.show()
+    plt.imshow(crop_org)
+    plt.show()
     return crop
 
 

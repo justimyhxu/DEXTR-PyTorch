@@ -27,7 +27,8 @@ parser = argparse.ArgumentParser(description='PyTorch DEXTNET TESTING')
 
 parser.add_argument('--point_type', type=str)
 parser.add_argument('--num_pts', type=int, default=50)
-
+parser.add_argument('--debug', action='store_true')
+parser.add_argument('--save_dir', type=str)
 args = parser.parse_args()
 
 assert args.point_type in ['mask', 'mask_noise', 'polygon', 'normal', 'bbox']
@@ -69,7 +70,8 @@ if resume_epoch == 0:
     run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
 else:
     run_id = 0
-save_dir = os.path.join(save_dir_root, 'run_' + str(run_id))
+# save_dir = os.path.join(save_dir_root, 'run_' + str(run_id))
+save_dir = os.path.join(save_dir_root, args.save_dir)
 print('->>>>>>>>>>>>>save dir', save_dir)
 if not os.path.exists(os.path.join(save_dir, 'models')):
     os.makedirs(os.path.join(save_dir, 'models'))
@@ -108,7 +110,7 @@ if resume_epoch != nEpochs:
         tr.ScaleNRotate(rots=(-20, 20), scales=(.75, 1.25)),
         tr.CropFromMask(crop_elems=('image', 'gt'), relax=relax_crop, zero_pad=zero_pad_crop),
         tr.FixedResize(resolutions={'crop_image': (512, 512), 'crop_gt': (512, 512)}),
-        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=False),
+        tr.ExtremePoints(sigma=10, pert=30, elem='crop_gt', num_pts=args.num_pts, type=args.point_type, vis=True if args.debug else False),
         tr.ToImage(norm_elem='extreme_points'),
         tr.ConcatInputs(elems=('crop_image', 'extreme_points')),
         tr.ToTensor()])
@@ -134,8 +136,8 @@ if resume_epoch != nEpochs:
     p['dataset_test'] = str(db_train)
     p['transformations_test'] = [str(tran) for tran in composed_transforms_ts.transforms]
 
-    trainloader = DataLoader(db_train, batch_size=p['trainBatch'], shuffle=True, num_workers=8)
-    testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=8)
+    trainloader = DataLoader(db_train, batch_size=p['trainBatch'], shuffle=True, num_workers=0 if args.debug else 16)
+    testloader = DataLoader(voc_val, batch_size=testBatch, shuffle=False, num_workers=16)
 
     generate_param_report(os.path.join(save_dir, exp_name + '.txt'), p)
 

@@ -239,6 +239,8 @@ class CropFromMask(object):
         self.zero_pad = zero_pad
 
     def __call__(self, sample):
+        # import ipdb
+        # ipdb.set_trace()
         _target = sample[self.mask_elem]
         if _target.ndim == 2:
             _target = np.expand_dims(_target, axis=-1)
